@@ -1,0 +1,23 @@
+image: hwrunner:latest
+variables:
+    GIT_SSL_NO_VERIFY: "true"
+    EXEC: hi
+    HW_DIR: hw0
+before_script:
+    - make clean all -C ${HW_DIR}
+stages:
+    - build
+    - run
+    - test
+build:
+    stage: build
+    script:
+        - echo "Build done"
+run:
+    stage: run
+    script:
+        - ${HW_DIR}/bin/${EXEC}
+test:
+    stage: test
+    script:
+        - ${HW_DIR}/bin/${EXEC}_test -S --verbose=0 --timeout 5
