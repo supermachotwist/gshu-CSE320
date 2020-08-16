@@ -114,7 +114,7 @@ typedef struct audio_header {
  *
  * @param hp  A pointer to the AUDIO_HEADER structure that is to receive
  * the data.
- * @return  1 if a valid header was read, otherwise 0.
+ * @return  0 if a valid header was read, otherwise EOF.
  */
 int audio_read_header(FILE *in, AUDIO_HEADER *hp);
 
@@ -125,7 +125,7 @@ int audio_read_header(FILE *in, AUDIO_HEADER *hp);
  * audio file format specifications, and writes this data to the standard output.
  *
  * @param  hp  A pointer to the AUDIO_HEADER structure that is to be output.
- * @return  1 if the function is successful at writing the data; otherwise 0.
+ * @return  0 if the function is successful at writing the data; otherwise EOF.
  */
 int audio_write_header(FILE *out, AUDIO_HEADER *hp);
 
