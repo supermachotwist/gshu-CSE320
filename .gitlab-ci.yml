@@ -3,6 +3,8 @@ variables:
     GIT_SSL_NO_VERIFY: "true"
     EXEC: hi
     HW_DIR: hw0
+    CPU_LIMIT: 10
+    FILE_LIMIT: 1m
 before_script:
     - make clean all -C ${HW_DIR}
 stages:
@@ -16,8 +18,12 @@ build:
 run:
     stage: run
     script:
+        - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - ${HW_DIR}/bin/${EXEC}
+    timeout: 1m
 test:
     stage: test
     script:
+        - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - ${HW_DIR}/bin/${EXEC}_test -S --verbose=0 --timeout 5
+    timeout: 1m
