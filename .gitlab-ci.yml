@@ -3,6 +3,8 @@ variables:
     GIT_SSL_NO_VERIFY: "true"
     EXEC: dtmf
     HW_DIR: hw1
+    CPU_LIMIT: 10
+    FILE_LIMIT: 1000000
 before_script:
     - make clean all -C ${HW_DIR}
 stages:
@@ -16,8 +18,10 @@ build:
 run:
     stage: run
     script:
+        - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - cd ${HW_DIR} && bin/${EXEC} -h
 test:
     stage: test
     script:
+        - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - cd ${HW_DIR} && bin/${EXEC}_tests -S --verbose=0 --timeout 5
