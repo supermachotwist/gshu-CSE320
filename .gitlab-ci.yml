@@ -4,7 +4,7 @@ variables:
     EXEC: hi
     HW_DIR: hw0
     CPU_LIMIT: 10
-    FILE_LIMIT: 1m
+    FILE_LIMIT: 1000000
 before_script:
     - make clean all -C ${HW_DIR}
 stages:
