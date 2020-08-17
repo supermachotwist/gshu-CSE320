@@ -20,10 +20,8 @@ run:
     script:
         - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - ${HW_DIR}/bin/${EXEC}
-    timeout: 1m
 test:
     stage: test
     script:
         - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - ${HW_DIR}/bin/${EXEC}_test -S --verbose=0 --timeout 5
-    timeout: 1m
