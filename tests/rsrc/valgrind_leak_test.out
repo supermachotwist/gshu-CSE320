@@ -1,0 +1,6 @@
+
+
+List of files with duplicate contents (includes hard links)
+
+FILE: tests/rsrc/test_tree/file1
+DUP:  tests/rsrc/test_tree/file1.dup
