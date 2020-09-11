@@ -50,10 +50,10 @@ int audio_samples;   // Number of samples in generated audio file.
  */
 #define DEFAULT_BLOCK_SIZE 100
 #define FOUR_DB 2.51188643151
-#define SIX_DB 7.78151250386
+#define SIX_DB 3.981071706
 #define TEN_DB 10.0
 #define MINUS_20DB 0.01
-#define MIN_DTMF_DURATION 0.03
+#define MIN_DTMF_DURATION 0.03  // in seconds
 
 /*
  * The following global variables have been provided for you.
