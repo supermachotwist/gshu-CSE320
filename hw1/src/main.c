@@ -18,12 +18,28 @@
 
 int main(int argc, char **argv)
 {
-    if(validargs(argc, argv))
-        USAGE(*argv, EXIT_FAILURE);
-    if(global_options & 1)
-        USAGE(*argv, EXIT_SUCCESS);
-    // TO BE IMPLEMENTED
-    return EXIT_FAILURE;
+    if (argc <= 1) {
+        USAGE(*argv, EXIT_FAILURE); //no enough arguments
+    }
+    if (validargs(argc, argv) == 0) { //if arguments are valid
+        if (global_options == HELP_OPTION){
+            USAGE(*argv, EXIT_SUCCESS);
+        }
+        else if (global_options == GENERATE_OPTION){
+            if(dtmf_generate(stdin, stdout, audio_samples) == EOF){
+                exit(EXIT_FAILURE);
+            }
+        }
+        else if (global_options == DETECT_OPTION) {
+            if(dtmf_detect(stdin, stdout) == EOF){
+                exit(EXIT_FAILURE);
+            }
+        }
+	}
+    else { //if arguments are invalid
+        exit(EXIT_FAILURE);
+    }
+    exit(EXIT_SUCCESS);
 }
 
 /*
