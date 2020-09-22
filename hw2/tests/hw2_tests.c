@@ -21,7 +21,7 @@ static char test_log_outfile[100];
  * and to make sure that the test output directory exists.
  */
 int setup_test(char *name) {
-    char cmd[500];
+    char cmd[1000];
     sprintf(test_log_outfile, "%s/%s", TEST_OUTPUT_DIR, name);
     sprintf(test_output_subdir, "%s/%s", TEST_OUTPUT_DIR, name);
     sprintf(cmd, "rm -f %s.out %s.err; rm -fr %s; mkdir -p %s",
@@ -37,7 +37,7 @@ int setup_test(char *name) {
  * and standard and error output redirected to separate output files.
  */
 int run_using_system(char *name, char *pre_cmd, char *valgrind_cmd) {
-    char cmd[500];
+    char cmd[1000];
     setup_test(name);
     sprintf(cmd, "%s%s bin/finddup %s > %s.out 2> %s.err",
 	    pre_cmd, valgrind_cmd, program_options, test_log_outfile, test_log_outfile);
