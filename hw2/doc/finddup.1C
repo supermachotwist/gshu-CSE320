@@ -1,0 +1,47 @@
+.TH FINDDUP 1 LOCAL
+.SH NAME
+finddup - find duplicate files in a list
+.SH SYNOPSIS
+finddup [options] filename
+.SH DESCRIPTION
+.ds fd \fBfinddup\fP
+\*(fd reads a list of filenames from the named file and scans them,
+building a list of duplicate files and hard links. These are then
+written to stdout for the user's information. This can be used to reduce
+disk usage, etc.
+.SS OPTIONS
+  -l - don't show info on hard links
+  -d - debug. May be used more than once for more info
+.SS How it works
+\*(fd stats each name and saves the file length, device, and inode. It
+then sorts the list and builds a CRC for each file which has the same
+length as another file. For files which have the same length and CRC, a
+byte by byte comparison is done to be sure that they are duplicates.
+.sp
+The CRC step for N files of size S bytes requires reading n*S total
+bytes, while the byte by byte check must be done for every file against
+every other, and read S*N*(N-1) bytes. Thus the CRC is a large timesaver
+in most cases.
+.SH EXAMPLES
+ $ find /u -type f -print > file.list.tmp
+ $ finddup file.list.tmp
+.SH FILES
+Only the file with the filenames.
+.SH SEE ALSO
+find(1).
+.SH DIAGNOSTICS
+If files are named in the specification file but not present they will
+be ignored. If an existing file can not be read the program will
+terminate rather than generate an incomplete list of duplicates.
+.SH LIMITATIONS
+An option to generate a partial list could be added when a file can't be
+accessed. An option to list only duplites which are not hard links could
+be added.
+.SH AUTHOR
+Bill Davidsen, davidsen@crdos1.crd.ge.com
+.SH Copyright
+Copyright (c) 1991 by Bill Davidsen, all rights reserved. This
+program may be freely used and distributed in its original
+form. Modified versions must be distributed with the original
+unmodified source code, and redistribution of the original code
+or any derivative program may not be restricted.

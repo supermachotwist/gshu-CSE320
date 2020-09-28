@@ -1,0 +1,28 @@
+Zero length files:
+
+tests/rsrc/test_tree/empty1
+tests/rsrc/test_tree/empty
+
+
+Hard link summary:
+
+
+FILE: tests/rsrc/test_tree/file2
+LINK: tests/rsrc/test_tree/file2.lnk
+
+FILE: tests/rsrc/test_tree/file1
+LINK: tests/rsrc/test_tree/file1.lnk
+
+
+List of files with duplicate contents (includes hard links)
+
+FILE: tests/rsrc/test_tree/file2
+DUP:  tests/rsrc/test_tree/file2.dup1
+DUP:  tests/rsrc/test_tree/file2.dup2
+DUP:  tests/rsrc/test_tree/subdir2/file2
+DUP:  tests/rsrc/test_tree/file2.lnk
+
+FILE: tests/rsrc/test_tree/file1
+DUP:  tests/rsrc/test_tree/file1.dup
+DUP:  tests/rsrc/test_tree/subdir1/file1
+DUP:  tests/rsrc/test_tree/file1.lnk

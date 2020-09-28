@@ -1,0 +1,14 @@
+tests/rsrc/test_tree/file2
+tests/rsrc/test_tree/binary1
+tests/rsrc/test_tree/subdir2/file2
+tests/rsrc/test_tree/file1
+tests/rsrc/test_tree/file2.dup1
+tests/rsrc/test_tree/subdir1/file1
+tests/rsrc/test_tree/file1.dup
+tests/rsrc/test_tree/nonexistent
+tests/rsrc/test_tree/file1.lnk
+tests/rsrc/test_tree/file2.dup2
+tests/rsrc/test_tree/binary2
+tests/rsrc/test_tree/empty1
+tests/rsrc/test_tree/file2.lnk
+tests/rsrc/test_tree/empty
