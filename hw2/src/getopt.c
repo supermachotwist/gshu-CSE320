@@ -8,7 +8,7 @@
  * UNIFORUM conference in Dallas.  I obtained it by electronic mail
  * directly from AT&T.  The people there assure me that it is indeed
  * in the public domain.
- * 
+ *
  * There is no manual page.  That is because the one they gave out at
  * UNIFORUM was slightly different from the current System V Release 2
  * manual page.  The difference apparently involved a note about the
@@ -22,9 +22,10 @@
  * However, I am not about to post a copy of anything licensed by AT&T.
  */
 
+#include <string.h>
 
 /*LINTLIBRARY*/
-#define NULL	0
+#define MY_NULL 0
 #define EOF	(-1)
 #define ERR(s, c)	if(opterr){\
 	extern int write();\
@@ -39,7 +40,7 @@ extern char *strchr();
 int	opterr = 1;
 int	optind = 1;
 int	optopt;
-char	*optarg;
+char *optarg;
 
 int
 att_getopt(argc, argv, opts)
@@ -60,7 +61,7 @@ char	**argv, *opts;
 		}
 	}
 	optopt = c = argv[optind][sp];
-	if(c == ':' || (cp=strchr(opts, c)) == NULL) {
+	if(c == ':' || (cp=strchr(opts, c)) == MY_NULL) {
 		ERR(": illegal option -- ", c);
 		if(argv[optind][++sp] == '\0') {
 			optind++;
@@ -83,7 +84,7 @@ char	**argv, *opts;
 			sp = 1;
 			optind++;
 		}
-		optarg = NULL;
+		optarg = MY_NULL;
 	}
 	return(c);
 }

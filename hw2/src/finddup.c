@@ -11,7 +11,7 @@
 |  Calling sequence:
 |   finddup [-l] checklist
 |
-|  where checklist is the name of a file containing filenames to 
+|  where checklist is the name of a file containing filenames to
 |  be checked, such as produced by "find . -type f -print >file"
 |  returns a list of linked and duplicated files.
 |
@@ -22,6 +22,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+#include "finddup.h"
 
 /* parameters */
 #define MAXFN	120             /* max filename length */
@@ -78,14 +81,8 @@ static char *HelpMsg[] = {
 	"  -d - debug (must compile with DEBUG)"
 #endif /* ?DEBUG */
 };
-static HelpLen = sizeof(HelpMsg)/sizeof(char *);
+static int HelpLen = sizeof(HelpMsg)/sizeof(char *);
 
-#ifndef	lint
-static char *SCCSid[] = {
-	"@(#)finddup.c v1.13 - 2/22/91",
-	"Copyright (c) 1991 by Bill Davidsen, all rights reserved"
-};
-#endif
 
 int comp1();					/* compare two filedesc's */
 void scan1();					/* make the CRC scan */
@@ -93,6 +90,7 @@ void scan2();					/* do full compare if needed */
 void scan3();					/* print the results */
 unsigned long get_crc();		/* get crc32 on a file */
 char *getfn();					/* get a filename by index */
+
 
 int finddup_main(argc, argv)
 int argc;
@@ -151,7 +149,7 @@ char *argv[];
 	}
 	/* finish the pointers */
 	max_files = 50;
-	debug(("First vector allocated @ %08lx, size %d bytes\n",
+	debug(("First vector allocated @ %08lx, size %lu bytes\n",
 		(long) filelist, 50*sizeof(filedesc)
 	));
 	fprintf(stderr, "build list...");
@@ -174,7 +172,7 @@ char *argv[];
 
 		/* add the data for this one */
 		if (stat(curfile, &statbuf)) {
-			fprintf(stderr, "%c  %s - ", 
+			fprintf(stderr, "%c  %s - ",
 				(firsterr++ == 0 ? '\n' : '\r'), curfile
 			);
 			perror("ignored");
@@ -197,7 +195,7 @@ char *argv[];
 		curptr->device = statbuf.st_dev;
 		curptr->inode = statbuf.st_ino;
 		curptr->flags = 0;
-		debug(("%cName[%d] %s, size %ld, inode %d\n",
+		debug(("%cName[%li] %s, size %ld, inode %lu\n",
 			(firsttrace++ == 0 ? '\n' : '\r'), n_files, curfile,
 			(long) statbuf.st_size, statbuf.st_ino
 		));
@@ -220,7 +218,7 @@ char *argv[];
 #ifdef DEBUG
 	for (loc = 0; DebugFlg > 1 && loc < n_files; ++loc) {
 		curptr = filelist + loc;
-		printf("%8ld %08lx %6d %6d %02x\n",
+		printf("%8ld %08lx %6lu %6lu %02x\n",
 			curptr->length, curptr->crc32,
 			curptr->device, curptr->inode,
 			curptr->flags
@@ -240,13 +238,21 @@ comp1(p1, p2)
 char *p1, *p2;
 {
 	register filedesc *p1a = (filedesc *)p1, *p2a = (filedesc *)p2;
-	register int retval;
+	register int retval = 0;
 
-	(retval = p1a->length - p2a->length) ||
-	(retval = p1a->crc32 - p2a->crc32) ||
-	(retval = p1a->device - p2a->device) ||
-	(retval = p1a->inode - p2a->inode);
-	
+	if (retval == 0) {
+		retval = p1a->length - p2a->length;
+	}
+	if (retval == 0) {
+		retval = p1a->crc32 - p2a->crc32;
+	}
+	if (retval == 0) {
+		retval = p1a->device - p2a->device;
+	}
+	if (retval == 0) {
+		retval = p1a->inode - p2a->inode;
+	}
+
 	return retval;
 }
 
@@ -254,7 +260,6 @@ char *p1, *p2;
 
 void
 scan1() {
-	FILE *fp;
 	int ix, needsort = 0;
 
 	for (ix = 1; ix <= n_files; ++ix) {
@@ -351,8 +356,7 @@ scan2() {
 void
 scan3()
 {
-	register filedesc *p1, *p2;
-	int ix, ix2, inmatch, need_hdr = 1;
+	int ix, inmatch, need_hdr = 1;
 	char *headfn;				/* pointer to the filename for sups */
 
 	/* now repeat for duplicates, links or not */
@@ -407,7 +411,7 @@ int ix;
 	/* build the CRC values */
 	while ((ch = fgetc(fp)) != EOF) {
 		carry = (val1 & 0x8000000) != 0;
-		val1 = (val1 << 1) ^ ch + carry;
+		val1 = ((val1 << 1) ^ ch) + carry;
 		val2 += ch << (ch & 003);
 	}
 	debug(("v1: %08lx v2: %08lx ", val1, val2));
