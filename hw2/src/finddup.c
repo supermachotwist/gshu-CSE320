@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <getopt.h>
 #include "finddup.h"
 
 /* parameters */
@@ -105,17 +106,32 @@ char *argv[];
 	off_t loc;            		/* location of name in the file */
 	int zl_hdr = 1;				/* need header for zero-length files list */
 	filedesc *curptr;			/* pointer to current storage loc */
+	int arg = 0;					/* integer representation of optional argument*/
+	//array of long options
+	static struct option long_options[] =
+		{
+			{"help", no_argument, 0, 'h'},
+			{"no-links", no_argument, 0, 'l'},
+			{"debug", optional_argument, 0, 'd'},
+			{0, 0, 0, 0}
+		};
 
 	/* parse options, if any */
 	opterr = 0;
-	while ((ch = att_getopt(argc, argv, OPTSTR)) != EOF) {
+	while ((ch = getopt_long(argc, argv, OPTSTR, long_options, NULL)) != EOF) {
+		if(optarg != 0){
+			int arg = atoi(optarg);
+		}
 		switch (ch) {
 		case 'l': /* set link flag */
 			linkflag = 0;
 			break;
 #ifdef DEBUG
 		case 'd': /* debug */
-			++DebugFlg;
+			if (arg >= 2)
+				DebugFlg += arg;
+			else
+				++DebugFlg;
 			break;
 #endif /* ?DEBUG */
 		case 'h': /* help */
@@ -417,7 +433,9 @@ int ix;
 	//register int carry;
 	//char ch;
 	char *fname;
-	char *content;
+	char *content = NULL;
+	//char *currline = NULL;
+	//size_t n;
 
 	/* open the file */
 	fname = getfn(ix);
@@ -430,6 +448,12 @@ int ix;
 		exit(1);
 	}
 
+	/*if (getline(&content, &n, fp) != -1) {
+		currline = content + n;
+	}
+	while(getline(&currline, &n, fp) != -1){
+		currline += n;
+	}*/
 	fseek(fp, 0, SEEK_END);
 	int fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
@@ -448,8 +472,10 @@ int ix;
 
 	return ((val1 & 0xffff) << 12) ^ (val2 && 0xffffff);*/
 
-	printf("%d\n",rc_crc32(0, content, strlen(content)));
-	return rc_crc32(0, content, strlen(content));
+	//printf("%d\n",rc_crc32(0, content, strlen(content)));
+	uint32_t crc = rc_crc32(0, content, strlen(content));
+	free(content);
+	return crc;
 }
 
 /* getfn - get filename from index */
