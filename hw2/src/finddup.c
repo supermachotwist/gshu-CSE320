@@ -135,6 +135,10 @@ char *argv[];
 			break;
 #endif /* ?DEBUG */
 		case 'h': /* help */
+			for (ch = 0; ch < HelpLen; ++ch) {
+				printf("%s\n", HelpMsg[ch]);
+			}
+			exit(0);
 		case '?':
 			for (ch = 0; ch < HelpLen; ++ch) {
 				printf("%s\n", HelpMsg[ch]);
