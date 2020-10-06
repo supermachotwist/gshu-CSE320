@@ -120,7 +120,7 @@ char *argv[];
 	opterr = 0;
 	while ((ch = getopt_long(argc, argv, OPTSTR, long_options, NULL)) != EOF) {
 		if(optarg != 0){
-			int arg = atoi(optarg);
+			arg = atoi(optarg);
 		}
 		switch (ch) {
 		case 'l': /* set link flag */
