@@ -231,23 +231,6 @@ void *sf_realloc(void *ptr, size_t size);
  */
 void sf_free(void *ptr);
 
-/*
- * Allocates a block of memory with a specified alignment.
- *
- * @param align The alignment required of the returned pointer.
- * @param size The number of bytes requested to be allocated.
- *
- * @return If align is not a power of two or is less than the minimum block size,
- * then NULL is returned and sf_errno is set to EINVAL.
- * If size is 0, then NULL is returned without setting sf_errno.
- * Otherwise, if the allocation is successful a pointer to a valid region of memory
- * of the requested size and with the requested alignment is returned.
- * If the allocation is not successful, then NULL is returned and sf_errno is set
- * to ENOMEM.
- */
-void *sf_memalign(size_t size, size_t align);
-
-
 /* sfutil.c: Helper functions already created for this assignment. */
 
 /*
