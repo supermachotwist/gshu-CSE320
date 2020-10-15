@@ -102,11 +102,9 @@ char *argv[];
 	struct stat statbuf;
 	int ch;
 	int firsterr = 0;			/* flag on 1st error for format */
-	int firsttrace = 0;			/* flag for 1st trace output */
 	off_t loc;            		/* location of name in the file */
 	int zl_hdr = 1;				/* need header for zero-length files list */
 	filedesc *curptr;			/* pointer to current storage loc */
-	int arg = 0;					/* integer representation of optional argument*/
 	//array of long options
 	static struct option long_options[] =
 		{
@@ -119,14 +117,15 @@ char *argv[];
 	/* parse options, if any */
 	opterr = 0;
 	while ((ch = getopt_long(argc, argv, OPTSTR, long_options, NULL)) != EOF) {
-		if(optarg != 0){
-			arg = atoi(optarg);
-		}
 		switch (ch) {
 		case 'l': /* set link flag */
 			linkflag = 0;
 			break;
 #ifdef DEBUG
+		int arg = 0;				/* integer representation of optional argument*/
+		if(optarg != 0){
+			arg = atoi(optarg);
+		}
 		case 'd': /* debug */
 			if (arg >= 2)
 				DebugFlg += arg;
@@ -369,7 +368,7 @@ scan2() {
 				SetFlag(ix2, FL_DUP);
 				/* move if needed */
 				if (lastix != ix2) {
-					int n1, n2;
+					int n1;
 
 					debug(("\n  swap %d and %d", lastix, ix2));
 					wkdesc = filelist[ix2];
