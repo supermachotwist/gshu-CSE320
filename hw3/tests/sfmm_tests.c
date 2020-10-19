@@ -243,7 +243,7 @@ Test(sfmm_basecode_suite, realloc_smaller_block_free_block, .timeout = TEST_TIME
 	// This block will go into the main freelist and be coalesced.  Note that we don't put split
         // blocks into the quick lists because their sizes are not sizes that were requested by the
 	// client, so they are not very likely to satisfy a new request.
-	assert_quick_list_block_count(0, 0);	
+	assert_quick_list_block_count(0, 0);
 	assert_free_block_count(0, 1);
 	assert_free_block_count(4048, 1);
 }
@@ -253,5 +253,74 @@ Test(sfmm_basecode_suite, realloc_smaller_block_free_block, .timeout = TEST_TIME
 //DO NOT DELETE THESE COMMENTS
 //############################################
 
-//Test(sfmm_student_suite, student_test_1, .timeout = TEST_TIMEOUT) {
-//}
+//Test edge case of being on the edge of the heap
+Test(sfmm_student_suite, alloc_exact_size_of_heap_twice, .timeout = TEST_TIMEOUT) {
+	void *x = sf_malloc(4066);
+	void *y = sf_malloc(4066);
+
+	cr_assert_not_null(x, "x is NULL!");
+	cr_assert_not_null(y, "y is NULL!");
+
+	sf_block *bp = (sf_block *)((char*)x - 2*sizeof(sf_header));
+	cr_assert((bp->header ^ MAGIC) & THIS_BLOCK_ALLOCATED, "Allocated bit is not set!");
+	cr_assert(((bp->header ^ MAGIC) & ~0xf) == 4080, "Realloc'ed block size not what was expected!");
+
+	bp = (sf_block *)((char*)y - 2*sizeof(sf_header));
+	cr_assert((bp->header ^ MAGIC) & THIS_BLOCK_ALLOCATED, "Allocated bit is not set!");
+	cr_assert(((bp->header ^ MAGIC) & ~0xf) == 4096, "Realloc'ed block size not what was expected!");
+
+	assert_quick_list_block_count(0,0);
+	assert_free_block_count(0,0);
+}
+
+//Test for allocation of size zero
+Test(sfmm_student_suite, alloc_of_size_zero, .timeout = TEST_TIMEOUT) {
+	void *x = sf_malloc(0);
+
+	cr_assert_null(x, "x is not NULL!");
+
+	cr_assert(sf_mem_start() == sf_mem_end(), "Heap is unecessarily grown!");
+}
+
+//Test for the utilization of quick list
+Test(sfmm_student_suite, utilize_quick_list, .timeout = TEST_TIMEOUT) {
+	void *x = sf_malloc(16);
+	sf_free(x);
+	x = sf_malloc(16);
+
+	sf_block *bp = (sf_block *)((char*)x - 2*sizeof(sf_header));
+	cr_assert((bp->header ^ MAGIC) & THIS_BLOCK_ALLOCATED, "Allocated bit is not set!");
+	cr_assert(((bp->header ^ MAGIC) & ~0xf) == 32, "Realloc'ed block size not what was expected!");
+
+	assert_quick_list_block_count(0,0);
+	assert_free_block_count(0,1);
+	assert_free_block_count(4048,1);
+}
+
+//Realloc of size zero
+Test(sfmm_student_suite, realloc_of_same_size, .timeout = TEST_TIMEOUT) {
+	void *x = sf_malloc(16);
+	x = sf_realloc(x, 16);
+
+	cr_assert_not_null(x, "x is NULL!");
+
+	sf_block *bp = (sf_block *)((char*)x - 2*sizeof(sf_header));
+	cr_assert((bp->header ^ MAGIC) & THIS_BLOCK_ALLOCATED, "Allocated bit is not set!");
+	cr_assert(((bp->header ^ MAGIC) & ~0xf) == 32, "Realloc'ed block size not what was expected!");
+
+	assert_quick_list_block_count(0,0);
+	assert_free_block_count(0,1);
+	assert_free_block_count(4048,1);
+}
+
+Test(sfmm_student_suite, malloc_large_negative, .timeout = TEST_TIMEOUT) {
+	void *x = sf_malloc(-100);
+
+	cr_assert_null(x, "x is not NULL!");
+
+	assert_quick_list_block_count(0,0);
+	assert_free_block_count(0,1);
+
+}
+
+
