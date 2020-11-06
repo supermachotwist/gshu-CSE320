@@ -3,6 +3,8 @@ variables:
     GIT_SSL_NO_VERIFY: "true"
     EXEC: legion
     HW_DIR: hw4
+    CPU_LIMIT: 60
+    FILE_LIMIT: 1000000
 before_script:
     - make clean all -C ${HW_DIR}
 stages:
@@ -16,8 +18,10 @@ build:
 run:
     stage: run
     script:
+        - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - cd ${HW_DIR} && bin/${EXEC}
 test:
     stage: test
     script:
+        - ulimit -t ${CPU_LIMIT} -f ${FILE_LIMIT}
         - cd ${HW_DIR} && bin/${EXEC}_tests -S -j1 --verbose=0 --timeout 60
