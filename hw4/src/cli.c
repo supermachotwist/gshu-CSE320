@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <wait.h>
 
 #define MAXARGS 128
 #define HELPMSG "Available commands:\n" \
@@ -21,10 +22,13 @@
 
 extern char **environ;
 
+volatile sig_atomic_t flag; //Flag to share between and main program
+volatile pid_t spid = 0;  //Shared child process to kill
+
 struct registered_daemons { //doubly linked list for holding registered daemons
 	char name[50];
 	char exe[50];
-	int pid;
+	pid_t pid;
 	char status[20];
 	char **argv;
 	struct registered_daemons *prev;
@@ -32,10 +36,41 @@ struct registered_daemons { //doubly linked list for holding registered daemons
 } head;
 
 /* TODO: Install SIGALRM handler for parent process */
+void sigalrm_handler(int sig) {
+	kill(spid, SIGKILL);  //Kill the child process
+	waitpid(spid, NULL, 0);  //Reap single child process
+	flag = 1;  //Set flag to indicate sigalrm was caught
+	return; //Return to main program
+}
 /* TODO: Install SIGTERM handler for child process */
 /* TODO: Install SIGCHLD handler for parent process */
-/* TODO: Install SIGINT handler for child process */
+void sigchld_handler(int sig) {
+	int olderrno = errno;
+	int status = 0;
+	pid_t cpid;
 
+	/* Reap as many zombie processes as possible */
+	while ((cpid = waitpid(-1, &status, 0)) > 0) {
+		if (WIFEXITED(status)) {
+			flag = 2;  //Set flag to show child process exited normally
+			spid = cpid;  //Share child that crashed with main program
+		}
+		else {
+			flag = 3;  //Set flag to show child process crashed
+			spid = cpid;  //Share child that crashed with main program
+		}
+	}
+
+	if (errno != ECHILD) {
+		sf_error("wait error");
+	}
+
+	errno = olderrno;
+	return;
+}
+/* TODO: Install SIGINT handler for parent process */
+
+/* Find registered daemon using reigstered name */
 struct registered_daemons* find_daemon(char *name) {
 	struct registered_daemons *current = head.next;
 	while (current != NULL) {
@@ -46,6 +81,18 @@ struct registered_daemons* find_daemon(char *name) {
 		current = current->next;
 	}
 	return NULL; //Return to cmdline
+}
+
+/* Find registered daemon using pid */
+struct registered_daemons* find_daemon_pid(pid_t pid) {
+	struct registered_daemons *current = head.next;
+	while (current != NULL) {
+		/* find daemon in linked list and return */
+		if (current->pid == pid) {
+			return current;  //Return to cmdline
+		}
+	}
+	return NULL;
 }
 
 
@@ -150,14 +197,20 @@ void eval(char *cmdline) {
 
 	/* Register Command */
 	else if (!strcmp(argv[0], "register")) {
+
 		if (argc == 1 || argc == 2) {
-			printf("Register: Please enter required arguments\n");
+			sf_error("Register: Please enter required arguments");
 			printf(HELPMSG);
 			return; //Return to cmdline
 		}
 		else {
+			struct registered_daemons *sp = find_daemon(argv[1]);
+			if (sp != NULL) {
+				sf_error("Register: Daemon name already taken");
+				return;
+			}
 			/* Initialize new struct for registered daemon */
-			struct registered_daemons *sp = malloc(sizeof(struct registered_daemons));
+			sp = malloc(sizeof(struct registered_daemons));
 			strcpy(sp->name, argv[1]); //Set name given by user
 			strcpy(sp->exe, argv[2]);  //Set runnable exe
 			sp->pid = 0;  //Process id is 0 if inactive
@@ -259,7 +312,7 @@ void eval(char *cmdline) {
 		else if (argc == 2) {
 			struct registered_daemons *sp = find_daemon(argv[1]);
 			if (sp != NULL) {
-				if (strcpy(sp->status, "inactive")){
+				if (strcmp(sp->status, "inactive")){
 					sf_error("Start:Daemon needs to be inactive");
 					return;
 				}
@@ -282,7 +335,7 @@ void eval(char *cmdline) {
 				}
 
 				/* Child process */
-				if (cpid == 0){
+				if (cpid == 0) {
 					setenv("PATH", strcat(strcat(DAEMONS_DIR,":"), getenv("PATH")),1);  //Prepend DAEMON_DIR to existing value
 					setpgid(0,0);  //Differentiate process group from parent process
 
@@ -291,7 +344,9 @@ void eval(char *cmdline) {
 						sf_error(strerror(errno));
 						return;
 					}
-
+					/* Send one bit synchronization message */
+					char buf = 'a';
+					write(pipefd[1],&buf, 1);
 					/* If error running executable */
 					if (execvpe(sp->exe, sp->argv, environ) == -1) {
 						sf_error(strerror(errno));
@@ -309,14 +364,24 @@ void eval(char *cmdline) {
 					sigdelset(&mask,SIGALRM);
 					sigprocmask(SIG_BLOCK, &mask, &prev_mask);
 
-					void *buf = NULL;
-
+					char buf;
+					spid = cpid;  //Set shared pid to child pid
 					/* Send SIGALRM to parent process in 1 second */
 					alarm(CHILD_TIMEOUT);
 
+					/* Read Error */
+					if (!read(pipefd[0], &buf, 1) || flag == 1) {
+						strcpy(sp->status, "inactive");
+						sf_error("Start: Parent read error");
+						flag = 0;
+						/* Restore signal mask before returning */
+						sigprocmask(SIG_SETMASK, &prev_mask, NULL);
+						return; //Return to cmdline
+					}
 					/* Check for synchronization message from child process */
-					if (read(pipefd[0], buf, 1)) {
+					else {
 						alarm(0);  //Cancel previous alarm
+						spid = 0; //Reset shared pid
 						sp->pid = cpid;  //Store pid of child process
 						strcpy(sp->status, "active");
 						close(pipefd[0]);
@@ -339,6 +404,55 @@ void eval(char *cmdline) {
 			printf("Start: Too many arguments\n");
 			printf(HELPMSG);
 			return;  //Return to cmdline
+		}
+	}
+
+	else if(!strcmp(argv[0], "stop")) {
+		struct registered_daemons *sp = find_daemon(argv[1]);
+		if (sp != NULL) {
+			/* Set deamon status to inactive if exited or crashed */
+			if (!strcmp(sp->status, "exited") || !strcmp(sp->status, "crashed")) {
+				strcpy(sp->status, "inactive");
+				sp->pid = 0;
+				return; //Return to cmdline
+			}
+
+			/* Check if status is anything other than active */
+			if (!strcmp(sp->status, "active")) {
+				strcpy(sp->status, "stopping");
+				kill(sp->pid, SIGTERM);
+				spid = sp->pid;
+				alarm(CHILD_TIMEOUT);
+				sigset_t mask;
+				sigemptyset(&mask);
+				sigfillset(&mask);
+				sigdelset(&mask, SIGCHLD);
+				sigdelset(&mask, SIGINT);
+				sigsuspend(&mask);
+
+				if (flag == 1) {  //If sigalrm was caught
+					sf_error("Stop: SIGALRM error");
+					flag = 0;
+					strcpy(sp->status, "inactive");
+					return; //Return to cmdline
+				}
+				else {  //If sigchld was caught
+					alarm(0);  //Turn off alarm
+					flag = 0;
+					strcpy(sp->status, "inactive");
+					return;
+				}
+			}
+			else {
+				sf_error("Stop: Unable to stop non-active daemon");
+				return; //Return to cmdline
+			}
+		}
+
+		/* When deamon not found */
+		else {
+			sf_error("Stop:Daemon not found");
+			return;
 		}
 	}
 
@@ -368,8 +482,12 @@ char *read_line(void) {
   return line;
 }
 
-void run_cli(FILE *in, FILE *out)
-{
+void run_cli(FILE *in, FILE *out) {
+	/* Install signal handlers */
+	if (signal(SIGALRM, sigalrm_handler) == SIG_ERR || signal(SIGCHLD, sigchld_handler) == SIG_ERR) {
+		sf_error("Signal Error");
+	}
+
 	char *cmdline;
 
 	/* Initialize header for registered linked list */
@@ -385,5 +503,23 @@ void run_cli(FILE *in, FILE *out)
     	eval(cmdline);
 
     	free(cmdline); //Flush command line input
+
+    	/* When a child process exits randomly*/
+	    if (flag == 2) {
+	    	struct registered_daemons *sp = find_daemon_pid(spid);
+	    	/* Set registered_daemons properties correctly */
+	    	sp->pid = 0;
+	    	strcpy(sp->status, "exited");
+	    	flag = 0;
+	    }
+	    /* When a child process crashes */
+	    if (flag == 3) {
+	    	struct registered_daemons *sp = find_daemon_pid(spid);
+	    	/* Set registered_daemons properties correctly */
+	    	sp->pid = 0;
+	    	strcpy(sp->status, "crashed");
+	    	flag = 0;
+	    }
     }
 }
+
