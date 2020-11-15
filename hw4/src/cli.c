@@ -188,8 +188,12 @@ void sigalrm_handler(int sig) {
 	struct registered_daemons *sp = find_daemon_pid(spid);
 	sf_kill(sp->name, spid);
 	kill(spid, SIGKILL);  //Kill the child process
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigfillset(&mask);
+	sigdelset(&mask, SIGCHLD);
+	sigsuspend(&mask);  //Wait for sigchld handler to take care of child process
 	//waitpid(spid, NULL, 0);  //Reap single child process
-	flag = 1;  //Set flag to indicate sigalrm was caught
 	return; //Return to main program
 }
 
@@ -223,6 +227,7 @@ void sigchld_handler(int sig) {
 /* TODO: Install SIGINT handler for parent process */
 void sigint_handler(int sig) {
 	shutdown();
+	sf_fini();
 	exit(EXIT_SUCCESS);
 }
 
@@ -332,6 +337,7 @@ void eval(char *cmdline) {
 	else if (!strcmp(argv[0], "quit")) {
 		shutdown(); // Kill all processes before exiting
 		free(argv);
+		sf_fini();
 		exit(EXIT_SUCCESS);
 	}
 
@@ -556,11 +562,10 @@ void eval(char *cmdline) {
 					alarm(CHILD_TIMEOUT);
 
 					/* Read Error */
-					if (!read(pipefd[0], buf, 1) || flag == 1) {
+					if (!read(pipefd[0], buf, 1)) {
 						close(pipefd[0]); //Close pipe after finished
 						strcpy(sp->status, "inactive");
 						sf_error("Start: Parent read error");
-						flag = 0;
 						/* Restore signal mask before returning */
 						sigprocmask(SIG_SETMASK, &prev_mask, NULL);
 						free(buf);
@@ -633,11 +638,8 @@ void eval(char *cmdline) {
 					sigsuspend(&mask);
 
 					alarm(0);  //Turn off alarm
-					if (flag == 1) {  //If sigalrm was caught
+					if (flag == 3) {  //If sigalrm was caught
 						sf_error("Stop: SIGALRM error");
-						flag = 0;
-						sp->pid = 0;
-						strcpy(sp->status, "inactive");
 						free(argv);
 						return; //Return to cmdline
 					}
@@ -748,7 +750,7 @@ void eval(char *cmdline) {
 					sigsuspend(&mask);
 
 					alarm(0);  //Turn off alarm
-					if (flag == 1) {  //If sigalrm was caught
+					if (flag == 3) {  //If sigalrm was caught
 						sf_error("Stop: SIGALRM error");
 						flag = 0;
 						sp->pid = 0;
