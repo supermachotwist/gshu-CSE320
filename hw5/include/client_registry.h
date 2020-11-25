@@ -105,9 +105,9 @@ CLIENT *creg_lookup(CLIENT_REGISTRY *cr, char *user);
  * responsibility to decrement the reference count of each of the
  * entries and to free the array when it is no longer needed.
  *
- * @param cr  The registry for which the set of usernames is to be
+ * @param cr  The registry for which the set of players is to be
  * obtained.
- * @return the list of usernames as a NULL-terminated array of strings.
+ * @return the list of players.
  */
 PLAYER **creg_all_players(CLIENT_REGISTRY *cr);
 
