@@ -476,6 +476,7 @@ int client_resign_game(CLIENT *client, int id) {
 	/* If the client is the source of the invitation */
 	if (source == client) {
 		role = inv_get_source_role(inv);
+
 	}
 	/* If the client is the target of the invitation */
 	else if(target == client) {
@@ -486,15 +487,6 @@ int client_resign_game(CLIENT *client, int id) {
 	}
 	/* Close invitation */
 	if (inv_close(inv, role)) {
-		return -1;
-	}
-
-	/* Remove invitation from target */
-	if (client_remove_invitation(target, inv) == -1) {
-		return -1;
-	}
-	/* Remove invitation from source */
-	if ((client_remove_invitation(source, inv)) == -1) {
 		return -1;
 	}
 
@@ -510,7 +502,6 @@ int client_resign_game(CLIENT *client, int id) {
 			return -1;
 		}
 		free(hdr);
-		return 0;
 	}
 
 	if (target == client) {
@@ -525,9 +516,17 @@ int client_resign_game(CLIENT *client, int id) {
 			return -1;
 		}
 		free(hdr);
-		return 0;
 	}
-	return -1;
+	/* Remove invitation from target */
+	if (client_remove_invitation(target, inv) == -1) {
+		return -1;
+	}
+	/* Remove invitation from source */
+	if ((client_remove_invitation(source, inv)) == -1) {
+		return -1;
+	}
+
+	return 0;  //Success
 }
 
 int client_make_move(CLIENT *client, int id, char *move) {

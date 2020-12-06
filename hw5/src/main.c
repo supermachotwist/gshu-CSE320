@@ -146,7 +146,7 @@ int main(int argc, char* argv[]){
     	pthread_create(&tid, NULL, jeux_client_service, connfd);
     }
 
-    terminate(EXIT_FAILURE);
+    terminate(EXIT_SUCCESS);
 }
 
 /*

@@ -113,10 +113,11 @@ void *jeux_client_service(void *arg) {
 
 					i++;
 				}
-				JEUX_PACKET_HEADER hdr;
-				hdr.type = JEUX_ACK_PKT;
-				hdr.size = ntohs(strlen(data) + 1);
-				client_send_packet(srcclient, &hdr, data);
+				JEUX_PACKET_HEADER *hdr = malloc(sizeof(JEUX_PACKET_HEADER));
+				hdr->type = JEUX_ACK_PKT;
+				hdr->size = ntohs(strlen(data) + 1);
+				client_send_packet(srcclient, hdr, data);
+				free(hdr);
 				free(data);
 				free(players);
 			}
@@ -152,16 +153,18 @@ void *jeux_client_service(void *arg) {
 				}
 
 				/* Send ack to source */
-				JEUX_PACKET_HEADER srchdr;
-				srchdr.type = JEUX_ACK_PKT;
-				srchdr.id = id; //Set id
-				if (client_send_packet(srcclient, &srchdr, NULL)) {
+				JEUX_PACKET_HEADER *srchdr  = malloc(sizeof(JEUX_PACKET_HEADER));;
+				srchdr->type = JEUX_ACK_PKT;
+				srchdr->id = id; //Set id
+				if (client_send_packet(srcclient, srchdr, NULL)) {
 					client_send_nack(srcclient);
 					if (payload != NULL) {
 						free(payload);
 					}
+					free(srchdr);
 					continue;
 				}
+				free(srchdr);
 			}
 
 			/* Revoke packet */
@@ -214,10 +217,11 @@ void *jeux_client_service(void *arg) {
 					client_send_ack(srcclient, NULL, 0);
 				}
 				else {  //If accepting client is first player to move
-					JEUX_PACKET_HEADER hdr;
-					hdr.type = JEUX_ACK_PKT;
-					hdr.size = ntohs(strlen(strp) + 1);
-					client_send_packet(srcclient, &hdr, strp);
+					JEUX_PACKET_HEADER *hdr = malloc(sizeof(JEUX_PACKET_HEADER));;
+					hdr->type = JEUX_ACK_PKT;
+					hdr->size = ntohs(strlen(strp) + 1);
+					client_send_packet(srcclient, hdr, strp);
+					free(hdr);
 				}
 				free(strp);
 			}
