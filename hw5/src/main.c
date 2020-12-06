@@ -27,7 +27,7 @@ static void terminate(int status);
 
 /* SIGHUP Handler */
 void sighup_handler (int signum) {
-	terminate(0);
+	terminate(EXIT_SUCCESS);
 }
 
 
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]){
     	pthread_create(&tid, NULL, jeux_client_service, connfd);
     }
 
-    terminate(0);
+    terminate(EXIT_FAILURE);
 }
 
 /*
