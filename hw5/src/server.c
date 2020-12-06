@@ -44,8 +44,8 @@ void *jeux_client_service(void *arg) {
 			Revoke and decline any outgoing invitation */
 		if (flag == 1) {
 			flag = 0;
-			player_unref(player, "because server thread is discarding reference to logged in player");
 			client_logout(srcclient);
+			player_unref(player, "because server thread is discarding reference to logged in player");
 			creg_unregister(client_registry, srcclient);
 			pthread_exit(NULL);
 		}
@@ -225,6 +225,7 @@ void *jeux_client_service(void *arg) {
 			/* Move packet */
 			else if (recvhdr.type == JEUX_MOVE_PKT) {
 				char *move = payload;
+				move[1] = '\0';  //Truncate string to first character
 				if (client_make_move(srcclient, recvhdr.id, move)) {  //If failure
 					client_send_nack(srcclient);
 				}

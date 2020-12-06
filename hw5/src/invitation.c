@@ -116,11 +116,16 @@ int inv_close(INVITATION *inv, GAME_ROLE role) {
 			sem_post(&inv->mutex);
 			return -1;
 		}
-		else {//Either in OPEN or ACCEPTED state
+		else if (inv->state == INV_ACCEPTED_STATE) {
 			inv->state = INV_CLOSED_STATE;  //Close invitation
 			if (!game_is_over(inv_get_game(inv))) {  //When the game is not over
 				game_resign(inv_get_game(inv), role);
 			}
+			sem_post(&inv->mutex);
+			return 0;
+		}
+		else if (inv->state == INV_OPEN_STATE) {//Either in OPEN or ACCEPTED state
+			inv->state = INV_CLOSED_STATE;  //Close invitation
 			sem_post(&inv->mutex);
 			return 0;
 		}
